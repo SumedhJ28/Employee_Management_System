@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function HREmployeesPage() {
   return (
     <div className="space-y-6">
@@ -19,9 +21,13 @@ export default function HREmployeesPage() {
           className="border rounded-lg px-4 py-2 text-sm w-64"
         />
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+        {/* ✅ Add Employee */}
+        <Link
+          href="/hr/employees/new"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+        >
           + Add Employee
-        </button>
+        </Link>
       </div>
 
       {/* Employees Table */}
@@ -39,28 +45,32 @@ export default function HREmployeesPage() {
 
           <tbody className="divide-y">
             <EmployeeRow
-              name="Sumedh "
+              id="1"
+              name="Sumedh"
               role="Software Engineer"
               department="Development"
               status="Active"
             />
 
             <EmployeeRow
-              name="vishal"
+              id="2"
+              name="Vishal"
               role="UI Designer"
               department="Design"
               status="Active"
             />
 
             <EmployeeRow
-              name="rani manwar"
+              id="3"
+              name="Rani"
               role="HR Executive"
               department="HR"
               status="On Leave"
             />
 
             <EmployeeRow
-              name="balirje"
+              id="4"
+              name="Baliraje"
               role="QA Engineer"
               department="Testing"
               status="Inactive"
@@ -77,11 +87,13 @@ export default function HREmployeesPage() {
 ================================ */
 
 function EmployeeRow({
+  id,
   name,
   role,
   department,
   status,
 }: {
+  id: string;
   name: string;
   role: string;
   department: string;
@@ -107,13 +119,22 @@ function EmployeeRow({
           {status}
         </span>
       </td>
-      <td className="px-4 py-3 space-x-2">
-        <button className="text-blue-600 hover:underline text-sm">
+
+      {/* ✅ ACTIONS */}
+      <td className="px-4 py-3 space-x-3">
+        <Link
+          href={`/hr/employees/${id}`}
+          className="text-blue-600 hover:underline text-sm"
+        >
           View
-        </button>
-        <button className="text-gray-600 hover:underline text-sm">
+        </Link>
+
+        <Link
+          href={`/hr/employees/${id}/edit`}
+          className="text-gray-600 hover:underline text-sm"
+        >
           Edit
-        </button>
+        </Link>
       </td>
     </tr>
   );
