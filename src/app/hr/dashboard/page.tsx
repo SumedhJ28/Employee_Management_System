@@ -1,97 +1,139 @@
-export default function HRDashboard() {
+"use client";
+
+/* ================= TYPES ================= */
+
+// ✅ Single source of truth
+type AttendanceStatus = "PRESENT" | "ABSENT" | "LEAVE";
+
+interface TodayAttendance {
+  name: string;
+  status: AttendanceStatus;
+  time: string;
+}
+
+/* ================= PAGE ================= */
+
+export default function HRDashboardPage() {
+  // Mock stats
+  const stats = {
+    totalEmployees: 4,
+    present: 2,
+    absent: 1,
+    onLeave: 1,
+  };
+
+  // ✅ TYPED DATA (IMPORTANT FIX)
+  const todayAttendance: TodayAttendance[] = [
+    { name: "Sumedh", status: "PRESENT", time: "09:12 AM" },
+    { name: "Vishal", status: "PRESENT", time: "09:20 AM" },
+    { name: "Rani", status: "LEAVE", time: "--" },
+    { name: "Baliraje", status: "ABSENT", time: "--" },
+  ];
+
+  const pendingLeaves = [
+    { name: "Rani", type: "Sick Leave", days: "1 Day" },
+    { name: "Baliraje", type: "Casual Leave", days: "2 Days" },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* ================= HEADER ================= */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-800">
           HR Dashboard
         </h1>
         <p className="text-sm text-gray-500">
-          Company attendance overview
+          Overview of today’s attendance & actions
         </p>
       </div>
 
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <StatCard
-          title="Total Employees"
-          value="48"
-          color="blue"
-        />
-        <StatCard
-          title="Present Today"
-          value="42"
-          color="green"
-        />
-        <StatCard
-          title="On Leave"
-          value="4"
-          color="yellow"
-        />
-        <StatCard
-          title="Absent Today"
-          value="2"
-          color="red"
-        />
+      {/* ================= STATS ================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard label="Total Employees" value={stats.totalEmployees} />
+        <StatCard label="Present Today" value={stats.present} color="green" />
+        <StatCard label="Absent Today" value={stats.absent} color="red" />
+        <StatCard label="On Leave" value={stats.onLeave} color="yellow" />
       </div>
 
-      {/* Middle Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* ================= TODAY ATTENDANCE ================= */}
+      <div className="bg-white border rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">
+          Today’s Attendance
+        </h2>
+
+        <div className="space-y-3">
+          {todayAttendance.map((emp) => (
+            <div
+              key={emp.name}
+              className="flex items-center justify-between border rounded-lg p-3"
+            >
+              <div>
+                <p className="font-medium text-gray-800">{emp.name}</p>
+                <p className="text-xs text-gray-500">
+                  Check-in: {emp.time}
+                </p>
+              </div>
+
+              {/* ✅ NO TS ERROR NOW */}
+              <StatusBadge status={emp.status} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ================= BOTTOM GRID ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Leaves */}
-        <div className="bg-white border rounded-xl p-4">
-          <h2 className="text-lg font-medium mb-4">
+        <div className="bg-white border rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
             Pending Leave Requests
           </h2>
 
-          <ul className="space-y-3 text-sm">
-            <li className="flex justify-between">
-              <span>Sumedh </span>
-              <span className="text-gray-500">2 days</span>
-            </li>
-            <li className="flex justify-between">
-              <span>vishal</span>
-              <span className="text-gray-500">1 day</span>
-            </li>
-            <li className="flex justify-between">
-              <span>rani manwar</span>
-              <span className="text-gray-500">Half Day</span>
-            </li>
-          </ul>
+          {pendingLeaves.map((leave, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between border rounded-lg p-3 mb-3"
+            >
+              <div>
+                <p className="font-medium text-gray-800">
+                  {leave.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {leave.type} · {leave.days}
+                </p>
+              </div>
+
+              <button className="text-sm text-indigo-600 hover:underline">
+                Review
+              </button>
+            </div>
+          ))}
+
+          {pendingLeaves.length === 0 && (
+            <p className="text-sm text-gray-500">
+              No pending requests
+            </p>
+          )}
         </div>
 
-        {/* Attendance Summary */}
-        <div className="bg-white border rounded-xl p-4">
-          <h2 className="text-lg font-medium mb-4">
-            Attendance Summary
+        {/* Alerts */}
+        <div className="bg-white border rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            System Alerts
           </h2>
 
-          <div className="space-y-2 text-sm text-gray-700">
-            <p>
-              Average Working Hours: <b>7.8 hrs</b>
-            </p>
-            <p>
-              Late Check-ins Today: <b>3</b>
-            </p>
-            <p>
-              Early Check-outs: <b>1</b>
-            </p>
-          </div>
-        </div>
-      </div>
+          <div className="space-y-3 text-sm">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              ⚠️ 3 employees have not checked in yet
+            </div>
 
-      {/* Alerts / Notices */}
-      <div className="bg-white border rounded-xl p-4">
-        <h2 className="text-lg font-medium mb-4">
-          HR Alerts
-        </h2>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+              ℹ️ Attendance policy updated last week
+            </div>
 
-        <div className="space-y-3 text-sm">
-          <div className="p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-            3 employees have not checked in today
-          </div>
-
-          <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-            Monthly attendance report is ready
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+              ✅ Payroll data synced successfully
+            </div>
           </div>
         </div>
       </div>
@@ -99,34 +141,43 @@ export default function HRDashboard() {
   );
 }
 
-/* ===============================
-   Reusable Stat Card
-================================ */
+/* ================= COMPONENTS ================= */
 
 function StatCard({
-  title,
+  label,
   value,
   color,
 }: {
-  title: string;
-  value: string;
-  color: "blue" | "green" | "yellow" | "red";
+  label: string;
+  value: number;
+  color?: "green" | "red" | "yellow";
 }) {
-  const colors = {
-    blue: "border-blue-500",
-    green: "border-green-500",
-    yellow: "border-yellow-500",
-    red: "border-red-500",
+  const colorMap = {
+    green: "bg-green-50 text-green-800",
+    red: "bg-red-50 text-red-800",
+    yellow: "bg-yellow-50 text-yellow-800",
   };
 
   return (
-    <div
-      className={`bg-white border-l-4 ${colors[color]} rounded-xl p-4`}
-    >
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-2xl font-semibold text-gray-800 mt-1">
-        {value}
-      </p>
+    <div className={`border rounded-xl p-6 ${color ? colorMap[color] : ""}`}>
+      <p className="text-sm">{label}</p>
+      <p className="text-3xl font-semibold mt-2">{value}</p>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: AttendanceStatus }) {
+  const styles: Record<AttendanceStatus, string> = {
+    PRESENT: "bg-green-100 text-green-800",
+    ABSENT: "bg-red-100 text-red-800",
+    LEAVE: "bg-yellow-100 text-yellow-800",
+  };
+
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}
+    >
+      {status}
+    </span>
   );
 }

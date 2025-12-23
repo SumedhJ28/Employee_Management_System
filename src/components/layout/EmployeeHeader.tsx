@@ -1,16 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 export default function EmployeeHeader() {
-  const router = useRouter();
-
   const handleLogout = () => {
     // Clear auth cookie
     document.cookie = "role=; path=/; max-age=0";
 
-    // Redirect to login
-    router.push("/auth/login");
+    // ✅ FINAL login route
+    window.location.href = "/login";
   };
 
   return (

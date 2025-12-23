@@ -2,23 +2,40 @@
 
 import { useState } from "react";
 
+/* ================= TYPES ================= */
+
 type AttendanceStatus =
   | "PRESENT"
   | "ABSENT"
   | "LEAVE"
-  | "HALF_DAY"
-  | "WEEKEND";
+  | "HALF_DAY";
+
+/* ================= CONSTANTS ================= */
+
+const MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+
+/* ================= PAGE ================= */
 
 export default function AttendancePage() {
-  const daysInMonth = 30;
+  const daysInMonth = 30; // keep simple & stable
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth()
+  );
+  const [filter, setFilter] = useState<AttendanceStatus | "ALL">("ALL");
+
+  /* ================= STATUS LOGIC ================= */
 
   const getStatus = (day: number): AttendanceStatus => {
-    if ([7, 14, 21, 28].includes(day)) return "WEEKEND";
+    // Mock data only (no weekend logic)
     if ([3, 11].includes(day)) return "LEAVE";
     if ([4].includes(day)) return "HALF_DAY";
     if ([1, 2, 5, 6, 9, 10, 15, 16].includes(day)) return "PRESENT";
+
     return "ABSENT";
   };
 
@@ -30,36 +47,63 @@ export default function AttendancePage() {
         return "bg-indigo-100 text-indigo-900";
       case "HALF_DAY":
         return "bg-yellow-100 text-yellow-900";
-      case "WEEKEND":
-        return "bg-gray-200 text-gray-600";
       case "ABSENT":
         return "bg-red-100 text-red-900";
     }
   };
 
+  const shouldShowDay = (day: number) => {
+    if (filter === "ALL") return true;
+    return getStatus(day) === filter;
+  };
+
   return (
     <div className="space-y-6">
-      {/* Title */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-800">Attendance</h1>
-        <p className="text-sm text-gray-500">
-          Monthly attendance overview
-        </p>
+      {/* ================= HEADER ================= */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Attendance
+          </h1>
+          <p className="text-sm text-gray-500">
+            Monthly attendance overview
+          </p>
+        </div>
+
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          className="border rounded-lg px-3 py-2 text-sm"
+        >
+          {MONTHS.map((month, index) => (
+            <option key={month} value={index}>
+              {month}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <Legend color="bg-emerald-100" label="Present" />
-        <Legend color="bg-red-100" label="Absent" />
-        <Legend color="bg-yellow-100" label="Half Day" />
-        <Legend color="bg-indigo-100" label="Leave" />
-        <Legend color="bg-gray-200" label="Weekend" />
+      {/* ================= FILTERS ================= */}
+      <div className="flex flex-wrap gap-2">
+        {["ALL","PRESENT","ABSENT","LEAVE","HALF_DAY"].map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f as any)}
+            className={`px-3 py-1 rounded-full text-sm border ${
+              filter === f
+                ? "bg-gray-800 text-white"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            {f.replace("_", " ")}
+          </button>
+        ))}
       </div>
 
-      {/* Calendar */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      {/* ================= CALENDAR ================= */}
+      <div className="bg-white border rounded-xl p-4">
         <div className="grid grid-cols-7 text-center text-sm font-medium text-gray-600 mb-2">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
@@ -68,6 +112,8 @@ export default function AttendancePage() {
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const status = getStatus(day);
+
+            if (!shouldShowDay(day)) return <div key={day} />;
 
             return (
               <div
@@ -84,7 +130,7 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ================= MODAL ================= */}
       {selectedDay && (
         <AttendanceModal
           day={selectedDay}
@@ -114,12 +160,7 @@ function AttendanceModal({
           <h2 className="text-lg font-semibold text-gray-800">
             Attendance Details
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            ✕
-          </button>
+          <button onClick={onClose}>✕</button>
         </div>
 
         <div className="space-y-3 text-sm">
@@ -133,7 +174,7 @@ function AttendanceModal({
         <div className="mt-6 text-right">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg"
           >
             Close
           </button>
@@ -144,15 +185,6 @@ function AttendanceModal({
 }
 
 /* ================= HELPERS ================= */
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className={`w-4 h-4 rounded ${color}`} />
-      <span>{label}</span>
-    </div>
-  );
-}
 
 function Info({ label, value }: { label: string; value: string }) {
   return (

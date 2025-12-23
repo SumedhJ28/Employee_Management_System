@@ -6,8 +6,11 @@ export default function HRHeader() {
   const router = useRouter();
 
   const handleLogout = () => {
+    // Clear auth cookie
     document.cookie = "role=; path=/; max-age=0";
-    router.push("/auth/login");
+
+    // Redirect to login (CORRECT ROUTE)
+    router.replace("/login");
   };
 
   return (

@@ -1,15 +1,90 @@
+"use client";
+
+import { useState } from "react";
+
+/* ================= TYPES ================= */
+
+interface EmployeeReport {
+  name: string;
+  present: number;
+  absent: number;
+  leaves: number;
+  hours: number;
+}
+
+/* ================= PAGE ================= */
+
 export default function HRReportsPage() {
-  const employees = [
+  const [month, setMonth] = useState("September 2025");
+  const [department, setDepartment] = useState("All");
+
+  const employees: EmployeeReport[] = [
     { name: "Sumedh Jadhav", present: 18, absent: 1, leaves: 2, hours: 7.8 },
     { name: "Vishal", present: 17, absent: 2, leaves: 1, hours: 7.4 },
     { name: "Rani", present: 16, absent: 1, leaves: 3, hours: 7.2 },
     { name: "Baliraje", present: 15, absent: 2, leaves: 3, hours: 7.0 },
   ];
 
+  /* ================= KPI CALCULATIONS ================= */
+
+  const totalEmployees = employees.length;
+  const totalLeaves = employees.reduce((a, e) => a + e.leaves, 0);
+
+  const avgAttendance = Math.round(
+    (employees.reduce((a, e) => a + e.present, 0) /
+      (employees.length * 22)) *
+      100
+  );
+
+  const avgHours = (
+    employees.reduce((a, e) => a + e.hours, 0) / employees.length
+  ).toFixed(1);
+
+  /* ================= EXPORT ================= */
+
+  const exportCSV = () => {
+    const headers = [
+      "Employee",
+      "Present",
+      "Absent",
+      "Leaves",
+      "Avg Hours",
+      "Status",
+    ];
+
+    const rows = employees.map((e) => {
+      const status =
+        e.present >= 18 ? "Excellent" : e.present >= 16 ? "Good" : "Average";
+
+      return [
+        e.name,
+        e.present,
+        e.absent,
+        e.leaves,
+        e.hours,
+        status,
+      ];
+    });
+
+    const csv =
+      [headers, ...rows]
+        .map((row) => row.join(","))
+        .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `attendance_report_${month}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-8">
-
-      {/* Header */}
+      {/* ================= HEADER ================= */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-800">
           Attendance Reports
@@ -19,30 +94,40 @@ export default function HRReportsPage() {
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* ================= KPI CARDS ================= */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Kpi title="Total Employees" value="4" />
-        <Kpi title="Avg Attendance" value="86%" />
-        <Kpi title="Avg Work Hours" value="7.4 hrs" />
-        <Kpi title="Total Leaves" value="8" />
+        <Kpi title="Total Employees" value={String(totalEmployees)} />
+        <Kpi title="Avg Attendance" value={`${avgAttendance}%`} />
+        <Kpi title="Avg Work Hours" value={`${avgHours} hrs`} />
+        <Kpi title="Total Leaves" value={String(totalLeaves)} />
       </div>
 
-      {/* Filters */}
+      {/* ================= FILTERS ================= */}
       <div className="bg-white border rounded-xl p-4 flex flex-wrap gap-4 items-end">
         <div>
           <label className="text-xs text-gray-500">Month</label>
-          <select className="block border rounded-md px-3 py-2 text-sm">
+          <select
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className="block border rounded-md px-3 py-2 text-sm"
+          >
             <option>September 2025</option>
             <option>August 2025</option>
+            <option>July 2025</option>
           </select>
         </div>
 
         <div>
           <label className="text-xs text-gray-500">Department</label>
-          <select className="block border rounded-md px-3 py-2 text-sm">
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className="block border rounded-md px-3 py-2 text-sm"
+          >
             <option>All</option>
             <option>Engineering</option>
             <option>HR</option>
+            <option>Operations</option>
           </select>
         </div>
 
@@ -50,39 +135,40 @@ export default function HRReportsPage() {
           Generate
         </button>
 
-        <button className="border px-4 py-2 rounded-md text-sm hover:bg-gray-50">
+        <button
+          onClick={exportCSV}
+          className="border px-4 py-2 rounded-md text-sm hover:bg-gray-50"
+        >
           Export CSV
         </button>
       </div>
 
-      {/* Visual Performance Section */}
+      {/* ================= PERFORMANCE BARS ================= */}
       <div className="bg-white border rounded-xl p-6">
         <h2 className="text-lg font-medium mb-4">
           Employee Attendance Performance
         </h2>
 
         {employees.map((emp) => {
-          const attendancePercent = Math.round(
-            (emp.present / 22) * 100
-          );
+          const percent = Math.round((emp.present / 22) * 100);
 
           return (
             <div key={emp.name} className="mb-4">
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium">{emp.name}</span>
-                <span>{attendancePercent}%</span>
+                <span>{percent}%</span>
               </div>
 
               <div className="h-2 bg-gray-200 rounded-full">
                 <div
                   className={`h-2 rounded-full ${
-                    attendancePercent >= 85
+                    percent >= 85
                       ? "bg-green-500"
-                      : attendancePercent >= 75
+                      : percent >= 75
                       ? "bg-yellow-500"
                       : "bg-red-500"
                   }`}
-                  style={{ width: `${attendancePercent}%` }}
+                  style={{ width: `${percent}%` }}
                 />
               </div>
             </div>
@@ -90,7 +176,7 @@ export default function HRReportsPage() {
         })}
       </div>
 
-      {/* Report Table */}
+      {/* ================= TABLE ================= */}
       <div className="bg-white border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600">
@@ -106,14 +192,7 @@ export default function HRReportsPage() {
 
           <tbody className="divide-y">
             {employees.map((emp) => (
-              <ReportRow
-                key={emp.name}
-                name={emp.name}
-                present={emp.present}
-                absent={emp.absent}
-                leaves={emp.leaves}
-                hours={emp.hours}
-              />
+              <ReportRow key={emp.name} {...emp} />
             ))}
           </tbody>
         </table>
@@ -122,7 +201,7 @@ export default function HRReportsPage() {
   );
 }
 
-/* ================= Small Components ================= */
+/* ================= COMPONENTS ================= */
 
 function Kpi({ title, value }: { title: string; value: string }) {
   return (
@@ -141,13 +220,7 @@ function ReportRow({
   absent,
   leaves,
   hours,
-}: {
-  name: string;
-  present: number;
-  absent: number;
-  leaves: number;
-  hours: number;
-}) {
+}: EmployeeReport) {
   const status =
     present >= 18 ? "Excellent" : present >= 16 ? "Good" : "Average";
 
@@ -166,9 +239,7 @@ function ReportRow({
       <td className="px-4 py-3 text-center">{present}</td>
       <td className="px-4 py-3 text-center">{absent}</td>
       <td className="px-4 py-3 text-center">{leaves}</td>
-      <td className="px-4 py-3 text-center">
-        {hours} hrs
-      </td>
+      <td className="px-4 py-3 text-center">{hours} hrs</td>
       <td className="px-4 py-3 text-center">
         <span
           className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyle}`}
