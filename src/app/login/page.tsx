@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"employee" | "hr">("employee");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [dark, setDark] = useState(false);
@@ -19,9 +18,10 @@ export default function LoginPage() {
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [email, password, role, forgot]);
+  }, [email, password, forgot]);
 
-  const handleLogin = () => {
+  /* 🔐 REAL LOGIN */
+  const handleLogin = async () => {
     setError("");
 
     if (!email || !password) {
@@ -31,13 +31,49 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      document.cookie = `role=${role}; path=/; max-age=86400`;
-      window.location.href =
-        role === "hr" ? "/hr/dashboard" : "/employee/dashboard";
-    }, 1200);
+    // ✅ NECESSARY FIX (do not remove)
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    try {
+      const res = await fetch("http://localhost:3001/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: trimmedEmail,
+          password: trimmedPassword,
+        }),
+      });
+
+      if (!res.ok) {
+        setError("Invalid email or password");
+        return;
+      }
+
+      const data = await res.json();
+      console.log("ROLE FROM BACKEND:", data.role);
+
+      // Save authenticated values
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("role", data.role);
+
+      const role = String(data.role).toUpperCase();
+
+      if (role === "HR") {
+        window.location.href = "/hr/dashboard";
+      } else if (role === "EMPLOYEE") {
+        window.location.href = "/employee/dashboard";
+      } else {
+        setError("Unauthorized role");
+      }
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /* 🔁 Forgot password (UI only for now) */
   const handleReset = () => {
     if (!email) {
       setError("Enter your email to reset password");
@@ -67,7 +103,6 @@ export default function LoginPage() {
             <p className="text-sm opacity-70">Sign in to continue</p>
           </div>
 
-          {/* Dark mode toggle */}
           <button
             onClick={() => setDark(!dark)}
             className="text-sm border rounded-full px-3 py-1"
@@ -76,14 +111,12 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Error */}
         {error && (
           <div className="mb-4 text-sm text-red-500 animate-shake">
             {error}
           </div>
         )}
 
-        {/* Forgot Password */}
         {forgot ? (
           <div className="space-y-4 animate-fade">
             <input
@@ -102,9 +135,7 @@ export default function LoginPage() {
             </button>
 
             {resetDone && (
-              <p className="text-sm text-green-500">
-                Reset link sent!
-              </p>
+              <p className="text-sm text-green-500">Reset link sent!</p>
             )}
 
             <button
@@ -115,64 +146,42 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <>
-            {/* Inputs */}
-            <div className="space-y-4">
-              <input
-                autoFocus
-                type="email"
-                placeholder="Email"
-                className="w-full border rounded-xl px-4 py-3 text-sm bg-transparent"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          <div className="space-y-4">
+            <input
+              autoFocus
+              type="email"
+              placeholder="Email"
+              className="w-full border rounded-xl px-4 py-3 text-sm bg-transparent"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full border rounded-xl px-4 py-3 text-sm bg-transparent"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <input
+              type="password"
+              placeholder="Password"
+              className="w-full border rounded-xl px-4 py-3 text-sm bg-transparent"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-              {/* Role toggle */}
-              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
-                {["employee", "hr"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRole(r as any)}
-                    className={`flex-1 py-2 rounded-lg text-sm transition-all ${
-                      role === r
-                        ? "bg-white dark:bg-black shadow font-medium"
-                        : "opacity-60"
-                    }`}
-                  >
-                    {r === "employee" ? "Employee" : "HR"}
-                  </button>
-                ))}
-              </div>
+            <button
+              onClick={handleLogin}
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl flex justify-center"
+            >
+              {loading ? <Spinner /> : "Login"}
+            </button>
 
-              {/* Login button */}
-              <button
-                onClick={handleLogin}
-                disabled={loading}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl flex justify-center"
-              >
-                {loading ? <Spinner /> : "Login"}
-              </button>
-
-              <button
-                onClick={() => setForgot(true)}
-                className="text-xs opacity-70"
-              >
-                Forgot password?
-              </button>
-            </div>
-          </>
+            <button
+              onClick={() => setForgot(true)}
+              className="text-xs opacity-70"
+            >
+              Forgot password?
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Animations */}
       <style jsx>{`
         .animate-fade {
           animation: fade 0.4s ease;
@@ -205,8 +214,8 @@ export default function LoginPage() {
 
 /* ===== Spinner ===== */
 
-function Spinner() {
+function Spinner(): JSX.Element {
   return (
-    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
   );
 }

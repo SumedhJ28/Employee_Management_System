@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 /* ================= TYPES ================= */
 
 // ✅ Single source of truth
@@ -14,8 +16,19 @@ interface TodayAttendance {
 /* ================= PAGE ================= */
 
 export default function HRDashboardPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+
+    if (role !== "HR") {
+      router.replace("/login");
+    }
+  }, [router]);
+
   // Mock stats
   const stats = {
+
     totalEmployees: 4,
     present: 2,
     absent: 1,

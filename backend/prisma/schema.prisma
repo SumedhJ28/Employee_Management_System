@@ -1,0 +1,43 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  EMPLOYEE
+  HR
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+
+  attendances Attendance[]
+}
+
+model Employee {
+  id          String @id @default(uuid())
+  userId      String @unique
+  name        String
+  department  String
+  designation String
+}
+
+model Attendance {
+  id       Int       @id @default(autoincrement())
+  userId   String // 👈 MUST MATCH User.id
+  checkIn  DateTime
+  checkOut DateTime?
+  date     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
